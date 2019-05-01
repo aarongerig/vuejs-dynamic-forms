@@ -7,7 +7,7 @@
         </header>
 
         <div class="content">
-            <FormWizard/>
+            <FormWizard />
         </div>
     </div>
 </template>

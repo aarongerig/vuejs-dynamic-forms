@@ -1,8 +1,12 @@
 <template>
     <div>
-        <div v-if="wizardInProgress">
+        <div v-if="wizardInProgress" v-show="asyncState !== 'pending'">
             <keep-alive>
-                <component ref="currentStep" :is="currentStep" @update="processStep" :wizard-data="form"></component>
+                <component ref="currentStep"
+                           :is="currentStep"
+                           @updateAsyncState="updateAsyncState"
+                           :wizard-data="form"
+                ></component>
             </keep-alive>
 
             <div class="progress-bar">
@@ -12,10 +16,8 @@
             <!-- Actions -->
             <div class="buttons">
                 <button @click="goBack" v-if="currentStepNumber > 1" class="btn-outlined">Back</button>
-                <button @click="nextButtonAction" :disabled="!canGoNext" class="btn">{{ isLastStep ? 'Complete Order' : 'Next' }}</button>
+                <button @click="nextButtonAction" class="btn">{{ isLastStep ? 'Complete Order' : 'Next' }}</button>
             </div>
-
-            <pre><code>{{ form }}</code></pre>
         </div>
 
         <div v-else>
@@ -28,6 +30,13 @@
             <p class="text-center">
                 <a href="https://vueschool.io" target="_blank" class="btn">Go somewhere cool!</a>
             </p>
+        </div>
+
+        <div class="loading-wrapper" v-if="asyncState === 'pending'">
+            <div class="loader">
+                <img src="/spinner.svg" alt="Loading">
+                <p>Please wait, we're hitting our servers!</p>
+            </div>
         </div>
     </div>
 </template>
@@ -52,7 +61,7 @@
     data () {
       return {
         currentStepNumber: 1,
-        canGoNext: false,
+        asyncState: null,
         steps: [
           'FormPlanPicker',
           'FormUserDetails',
@@ -74,59 +83,63 @@
 
     computed: {
       length () {
-        return this.steps.length
+        return this.steps.length;
       },
 
       currentStep () {
-        return this.steps[this.currentStepNumber - 1]
+        return this.steps[this.currentStepNumber - 1];
       },
 
       isLastStep () {
-        return this.currentStepNumber === this.length
+        return this.currentStepNumber === this.length;
       },
 
       progress () {
-        return this.currentStepNumber / this.length * 100
+        return this.currentStepNumber / this.length * 100;
       },
 
       wizardInProgress () {
-        return this.currentStepNumber <= this.length
+        return this.currentStepNumber <= this.length;
       }
     },
 
     methods: {
       goBack () {
-        this.currentStepNumber--
-        this.canGoNext = true
+        this.currentStepNumber--;
       },
 
       goNext () {
-        this.currentStepNumber++
-
-        this.$nextTick(() => {
-          this.canGoNext = !this.$refs.currentStep.$v.$invalid
-        })
+        this.currentStepNumber++;
       },
 
       nextButtonAction () {
-        if (this.isLastStep) {
-          this.submitOrder()
-        } else {
-          this.goNext()
-        }
+        this.$refs.currentStep.submit()
+          .then(stepData => {
+            Object.assign(this.form, stepData);
+
+            if (this.isLastStep) {
+              this.submitOrder();
+            } else {
+              this.goNext();
+            }
+          })
+          .catch(error => console.log(error));
       },
 
-      processStep (step) {
-        Object.assign(this.form, step.data)
-        this.canGoNext = step.valid
+      updateAsyncState (state) {
+        this.asyncState = state;
       },
 
       submitOrder () {
+        this.asyncState = 'pending';
         postFormToDB(this.form).then(() => {
-          console.log('Form submitted', this.form)
-          this.currentStepNumber++
-        })
+          console.log('Form submitted', this.form);
+          this.asyncState = 'success';
+          this.currentStepNumber++;
+        });
       }
     }
   }
 </script>
+
+<style scoped></style>

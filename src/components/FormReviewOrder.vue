@@ -29,7 +29,7 @@
 
             <p class="description">Treat yourself by leveling up your monthly box</p>
 
-            <div class="options" @change="submit">
+            <div class="options">
                 <div class="option">
                     <input v-model="form.chocolate" type="checkbox" value="chocolate" id="chocolate">
                     <label for="chocolate">4 pcs. Single Origin Chocolate (+$4/month)</label>
@@ -73,22 +73,22 @@
           chocolate: false,
           otherTreat: false
         }
-      }
+      };
     },
 
     computed: {
       totalPrice () {
-        let total = this.wizardData.plan.price
+        let total = this.wizardData.plan.price;
 
         if (this.form.chocolate) {
-          total += 4
+          total += 4;
         }
 
         if (this.form.otherTreat) {
-          total += 2
+          total += 2;
         }
 
-        return total
+        return total;
       }
     },
 
@@ -96,13 +96,10 @@
 
     methods: {
       submit () {
-        this.$emit('update', {
-          data: {
-            chocolate: this.form.chocolate,
-            otherTreat: this.form.otherTreat
-          },
-          valid: true
-        })
+        return Promise.resolve({
+          chocolate: this.form.chocolate,
+          otherTreat: this.form.otherTreat
+        });
       }
     }
   }
